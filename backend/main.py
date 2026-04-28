@@ -51,6 +51,23 @@ def health():
         "PINECONE_KEY_set": bool(os.getenv("PINECONE_KEY")),
     }
 
+@app.get("/api/test-gemini")
+def test_gemini():
+    import os, requests
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        return {"error": "GEMINI_API_KEY not set"}
+    try:
+        r = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}",
+            headers={"Content-Type": "application/json"},
+            json={"contents": [{"parts": [{"text": "Say hello in one sentence."}]}]},
+            timeout=9
+        )
+        return {"status": r.status_code, "response": r.json()}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/api/chat")
 def chat_endpoint(req: ChatRequest):
     """
