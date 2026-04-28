@@ -93,42 +93,53 @@ def get_history(user_id):
         return ""
 
 def generate_response(prompt):
-    if not OPENROUTER_API_KEY:
-        return "System Error: OPENROUTER_API_KEY is not set."
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-    # Fallback chain of free models — tries each one until one succeeds
-    free_models = [
-        "google/gemma-3-27b-it:free",
-        "deepseek/deepseek-r1:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "qwen/qwen-2.5-7b-instruct:free",
-        "microsoft/phi-3-mini-128k-instruct:free",
-    ]
-
-    for model in free_models:
+    # --- Primary: Google Gemini (free tier: 1500 req/day) ---
+    if GEMINI_API_KEY:
         try:
             response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}]
-                },
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
+                headers={"Content-Type": "application/json"},
+                json={"contents": [{"parts": [{"text": prompt}]}]},
                 timeout=9
             )
             data = response.json()
-            if "choices" in data:
-                return data["choices"][0]["message"]["content"]
-            # If this model returned an error, log and try next
-            error_code = data.get("error", {}).get("code", 0)
-            print(f"Model {model} failed (code {error_code}), trying next...")
+            if "candidates" in data:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            print("Gemini error:", data)
         except Exception as e:
-            print(f"Model {model} exception: {e}, trying next...")
+            print(f"Gemini exception: {e}")
 
-    return "I'm currently experiencing high demand. Please try again in a moment."
+    # --- Fallback: OpenRouter free models ---
+    if OPENROUTER_API_KEY:
+        free_models = [
+            "google/gemma-3-27b-it:free",
+            "deepseek/deepseek-r1:free",
+            "qwen/qwen-2.5-7b-instruct:free",
+        ]
+        for model in free_models:
+            try:
+                response = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}]
+                    },
+                    timeout=8
+                )
+                data = response.json()
+                if "choices" in data:
+                    return data["choices"][0]["message"]["content"]
+                print(f"Model {model} failed, trying next...")
+            except Exception as e:
+                print(f"Model {model} exception: {e}")
+
+    return "I'm currently unavailable. Please add a GEMINI_API_KEY to your Vercel environment variables for reliable responses."
 
 def get_bot_response(query, user_id):
     # 1. Fetch memory
