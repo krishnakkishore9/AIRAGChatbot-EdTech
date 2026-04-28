@@ -95,27 +95,40 @@ def get_history(user_id):
 def generate_response(prompt):
     if not OPENROUTER_API_KEY:
         return "System Error: OPENROUTER_API_KEY is not set."
-        
-    try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "meta-llama/llama-3.2-3b-instruct:free",
-                "messages": [{"role": "user", "content": prompt}]
-            },
-            timeout=10 # ensure we don't hit the vercel limit
-        )
-        data = response.json()
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
-        return f"OpenRouter Error: {data}"
-    except Exception as e:
-        print(f"OpenRouter Request Error: {e}")
-        return "AI Generation Error: Request to OpenRouter failed."
+
+    # Fallback chain of free models — tries each one until one succeeds
+    free_models = [
+        "google/gemma-3-27b-it:free",
+        "deepseek/deepseek-r1:free",
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "qwen/qwen-2.5-7b-instruct:free",
+        "microsoft/phi-3-mini-128k-instruct:free",
+    ]
+
+    for model in free_models:
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}]
+                },
+                timeout=9
+            )
+            data = response.json()
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"]
+            # If this model returned an error, log and try next
+            error_code = data.get("error", {}).get("code", 0)
+            print(f"Model {model} failed (code {error_code}), trying next...")
+        except Exception as e:
+            print(f"Model {model} exception: {e}, trying next...")
+
+    return "I'm currently experiencing high demand. Please try again in a moment."
 
 def get_bot_response(query, user_id):
     # 1. Fetch memory
