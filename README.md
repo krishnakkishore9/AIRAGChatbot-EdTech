@@ -211,5 +211,3 @@ The `vercel.json` file dictates the routing:
 - All other paths are automatically handled by the frontend framework.
 
 To deploy, simply import your GitHub repository into Vercel, inject the environment variables into the project settings, and Vercel will handle building both the frontend and the Python serverless functions automatically.
-#   A I R A G C h a t b o t - E d T e c h  
- 
