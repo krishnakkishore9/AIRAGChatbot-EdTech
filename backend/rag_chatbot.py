@@ -104,7 +104,7 @@ def generate_response(prompt):
                 "Content-Type": "application/json"
             },
             json={
-                "model": "openai/gpt-4o-mini",
+                "model": "mistralai/mistral-7b-instruct:free",
                 "messages": [{"role": "user", "content": prompt}]
             },
             timeout=10 # ensure we don't hit the vercel limit
