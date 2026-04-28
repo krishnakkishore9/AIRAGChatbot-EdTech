@@ -16,15 +16,27 @@ PINECONE_KEY = os.getenv("PINECONE_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 INDEX_NAME = "school-chatbot"
 
-# Initialize Pinecone
-pc = Pinecone(api_key=PINECONE_KEY)
-index = pc.Index(INDEX_NAME)
+# Initialize Pinecone safely
+try:
+    pc = Pinecone(api_key=PINECONE_KEY)
+    index = pc.Index(INDEX_NAME)
+except Exception as e:
+    print("Pinecone Init Error:", e)
+    index = None
 
-# Initialize Supabase
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Initialize Supabase safely
+try:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    print("Supabase Init Error:", e)
+    supabase = None
 
-# Initialize Hugging Face for Embeddings
-hf_client = InferenceClient(token=HF_TOKEN)
+# Initialize Hugging Face for Embeddings safely
+try:
+    hf_client = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
+except Exception as e:
+    print("HF Init Error:", e)
+    hf_client = None
 
 def get_embedding(text):
     return hf_client.feature_extraction(text, model="sentence-transformers/all-MiniLM-L6-v2")
@@ -81,28 +93,29 @@ def get_history(user_id):
         return ""
 
 def generate_response(prompt):
-    # A robust list of extremely reliable open-source models on Hugging Face
-    fallback_models = [
-        "Qwen/Qwen2.5-72B-Instruct",
-        "mistralai/Mistral-Nemo-Instruct-2407",
-        "microsoft/Phi-3-mini-4k-instruct"
-    ]
-    
-    messages = [{"role": "user", "content": prompt}]
-    
-    for model in fallback_models:
-        try:
-            response = hf_client.chat_completion(
-                model=model,
-                messages=messages,
-                max_tokens=500
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            print(f"Warning: Model {model} failed: {str(e)}. Attempting fallback...")
-            continue # Try the next model
-            
-    return "AI Generation Error: All fallback models are currently experiencing rate limits. Please try again in a few moments."
+    if not OPENROUTER_API_KEY:
+        return "System Error: OPENROUTER_API_KEY is not set."
+        
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "openai/gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}]
+            },
+            timeout=10 # ensure we don't hit the vercel limit
+        )
+        data = response.json()
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
+        return f"OpenRouter Error: {data}"
+    except Exception as e:
+        print(f"OpenRouter Request Error: {e}")
+        return "AI Generation Error: Request to OpenRouter failed."
 
 def get_bot_response(query, user_id):
     # 1. Fetch memory
