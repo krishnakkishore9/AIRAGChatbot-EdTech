@@ -61,6 +61,8 @@ Before clicking Deploy, expand the **Environment Variables** section and copy-pa
 - `OPENROUTER_API_KEY`
 - `SUPABASE_URL`
 - `SUPABASE_KEY`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 - `PINECONE_KEY`
 - `PINECONE_ENV`
 - `HF_TOKEN`

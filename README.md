@@ -169,6 +169,8 @@ Create a `.env` file in the root directory and/or backend directory:
 OPENROUTER_API_KEY=your_openrouter_api_key
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_anon_key
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 PINECONE_KEY=your_pinecone_api_key
 PINECONE_ENV=your_pinecone_environment
 ```
