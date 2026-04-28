@@ -41,7 +41,15 @@ class ChatRequest(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "rag_import_error": RAG_IMPORT_ERROR}
+    import os
+    return {
+        "status": "ok",
+        "rag_import_error": RAG_IMPORT_ERROR,
+        "GEMINI_API_KEY_set": bool(os.getenv("GEMINI_API_KEY")),
+        "OPENROUTER_API_KEY_set": bool(os.getenv("OPENROUTER_API_KEY")),
+        "SUPABASE_URL_set": bool(os.getenv("SUPABASE_URL")),
+        "PINECONE_KEY_set": bool(os.getenv("PINECONE_KEY")),
+    }
 
 @app.post("/api/chat")
 def chat_endpoint(req: ChatRequest):
