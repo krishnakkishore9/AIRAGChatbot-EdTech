@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pinecone
+supabase
+requests
+python-dotenv
+langchain
+langchain-text-splitters
+gradio
