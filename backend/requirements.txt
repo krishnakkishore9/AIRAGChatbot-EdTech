@@ -6,4 +6,5 @@ requests
 python-dotenv
 langchain
 langchain-text-splitters
-gradio
+huggingface_hub
+numpy
