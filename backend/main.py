@@ -4,7 +4,14 @@ from pydantic import BaseModel
 import uvicorn
 import uuid
 
-from rag_chatbot import get_bot_response
+import traceback
+
+try:
+    from rag_chatbot import get_bot_response
+    RAG_IMPORT_ERROR = None
+except Exception as e:
+    get_bot_response = None
+    RAG_IMPORT_ERROR = traceback.format_exc()
 
 app = FastAPI(title="School RAG API")
 
@@ -27,16 +34,22 @@ class ChatRequest(BaseModel):
     message: str
     user_id: str
 
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "rag_import_error": RAG_IMPORT_ERROR}
+
 @app.post("/api/chat")
 def chat_endpoint(req: ChatRequest):
     """
     Standard JSON API endpoint for the React/Next.js frontend.
     """
+    if RAG_IMPORT_ERROR:
+        raise HTTPException(status_code=500, detail=f"RAG module failed to load: {RAG_IMPORT_ERROR}")
     try:
         reply = get_bot_response(req.message, req.user_id)
         return {"reply": reply}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=traceback.format_exc())
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
