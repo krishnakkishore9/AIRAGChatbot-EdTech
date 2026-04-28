@@ -144,7 +144,7 @@ def generate_response(prompt):
     if HF_TOKEN:
         try:
             response = requests.post(
-                "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct",
+                "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
                 headers={"Authorization": f"Bearer {HF_TOKEN}"},
                 json={"inputs": prompt, "parameters": {"max_new_tokens": 400}},
                 timeout=9
@@ -153,9 +153,9 @@ def generate_response(prompt):
             if isinstance(data, list) and "generated_text" in data[0]:
                 text = data[0]["generated_text"]
                 return text.replace(prompt, "").strip() # HF returns prompt + generation
-            print("HF error:", data)
+            return f"HF API Error: {data}"
         except Exception as e:
-            print(f"HF exception: {e}")
+            return f"HF Exception: {e}"
 
     return "All AI models are currently rate-limited or out of quota. Please check your API keys (Gemini, OpenRouter, or Hugging Face)."
 
