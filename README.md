@@ -174,6 +174,7 @@ PINECONE_ENV=your_pinecone_environment
 ```
 
 ### 3. Running Locally
+
 **Terminal 1 (Backend):**
 ```bash
 cd backend
@@ -182,6 +183,8 @@ source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
+*➡️ Backend API is now running at: **`http://localhost:8000`***
+*➡️ Gradio Chat UI is available at: **`http://localhost:8000/chat-ui`***
 
 **Terminal 2 (Frontend):**
 ```bash
@@ -189,6 +192,7 @@ cd frontend
 npm install
 npm run dev
 ```
+*➡️ Frontend Web App is now running at: **`http://localhost:5173`***
 
 ---
 
