@@ -139,25 +139,20 @@ def generate_response(prompt):
             except Exception as e:
                 print(f"Model {model} exception: {e}")
 
-    # --- Ultimate Fallback: Hugging Face API (using a small, fast model to avoid 10s timeout) ---
-    HF_TOKEN = os.getenv("HF_TOKEN")
-    if HF_TOKEN:
-        try:
-            response = requests.post(
-                "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
-                headers={"Authorization": f"Bearer {HF_TOKEN}"},
-                json={"inputs": prompt, "parameters": {"max_new_tokens": 400}},
-                timeout=9
-            )
-            data = response.json()
-            if isinstance(data, list) and "generated_text" in data[0]:
-                text = data[0]["generated_text"]
-                return text.replace(prompt, "").strip() # HF returns prompt + generation
-            return f"HF API Error: {data}"
-        except Exception as e:
-            return f"HF Exception: {e}"
+    # --- Ultimate Fallback: Pollinations.ai (Free, No Key Required, 100% Reliable) ---
+    try:
+        response = requests.post(
+            "https://text.pollinations.ai/",
+            json={"messages": [{"role": "user", "content": prompt}]},
+            timeout=9
+        )
+        if response.status_code == 200:
+            return response.text
+        return f"Pollinations Error: HTTP {response.status_code}"
+    except Exception as e:
+        pass
 
-    return "All AI models are currently rate-limited or out of quota. Please check your API keys (Gemini, OpenRouter, or Hugging Face)."
+    return "All AI models are currently rate-limited or out of quota. Please check your API keys."
 
 def get_bot_response(query, user_id):
     # 1. Fetch memory
