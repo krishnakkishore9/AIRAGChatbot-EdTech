@@ -139,7 +139,25 @@ def generate_response(prompt):
             except Exception as e:
                 print(f"Model {model} exception: {e}")
 
-    return "I'm currently unavailable. Please add a GEMINI_API_KEY to your Vercel environment variables for reliable responses."
+    # --- Ultimate Fallback: Hugging Face API (using a small, fast model to avoid 10s timeout) ---
+    HF_TOKEN = os.getenv("HF_TOKEN")
+    if HF_TOKEN:
+        try:
+            response = requests.post(
+                "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct",
+                headers={"Authorization": f"Bearer {HF_TOKEN}"},
+                json={"inputs": prompt, "parameters": {"max_new_tokens": 400}},
+                timeout=9
+            )
+            data = response.json()
+            if isinstance(data, list) and "generated_text" in data[0]:
+                text = data[0]["generated_text"]
+                return text.replace(prompt, "").strip() # HF returns prompt + generation
+            print("HF error:", data)
+        except Exception as e:
+            print(f"HF exception: {e}")
+
+    return "All AI models are currently rate-limited or out of quota. Please check your API keys (Gemini, OpenRouter, or Hugging Face)."
 
 def get_bot_response(query, user_id):
     # 1. Fetch memory
